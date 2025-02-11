@@ -1,11 +1,11 @@
 class Slave:
-    """ define slaves in socket programing.
-    """
+    """define slaves in socket programing."""
 
     def __init__(self, host_port: str):
         if ":" not in host_port:
             raise ValueError(
-                "The format of slave definition is incorrect, should be <host>:<port>")
+                "The format of slave definition is incorrect, should be <host>:<port>"
+            )
         splits = host_port.lstrip().rstrip().split(":")
         self.host = splits[0]
         try:
@@ -14,12 +14,12 @@ class Slave:
             raise ValueError("The port should be an integer.")
 
     def to_string(self) -> str:
-        """ convert to string
+        """convert to string
 
         Returns:
             [str]: description of the slave.
         """
-        return "<"+self.host+">:<"+str(self.port)+">"
+        return "<" + self.host + ">:<" + str(self.port) + ">"
 
 
 class Slaves:
@@ -30,7 +30,7 @@ class Slaves:
         self.container[slave.to_string()] = slave
 
     def delete(self, host: str, port: int):
-        slave = Slave(host+":"+str(port))
+        slave = Slave(host + ":" + str(port))
         if slave.to_string() in self.container:
             del self.container[slave.to_string()]
         else:
@@ -66,13 +66,13 @@ class UseCols:
         self.overlap_cols = []
 
     def get_continous_and_categorical_cols(self):
-        columns_as_continous = [self.usecols['y'][0]]
-        if self.usecols['x_continous']:
-            columns_as_continous = columns_as_continous + \
-                self.usecols['x_continous']
+        columns_as_continous = [self.usecols["y"][0]]
+        if self.usecols["x_continous"]:
+            columns_as_continous = columns_as_continous + self.usecols["x_continous"]
 
-        columns_as_categorical = self.usecols["x_categorical"] + \
-            self.usecols["gb"]
+        columns_as_categorical = self.usecols["x_categorical"]
+        if self.usecols["gb"]:
+            columns_as_categorical += self.usecols["gb"]
         # print("columns_as_continous", columns_as_continous)
         # print("columns_as_categorical", columns_as_categorical)
 
@@ -88,7 +88,7 @@ class UseCols:
         return self.continous_cols, self.categorical_cols, self.overlap_cols
 
     def get_gb_x_y_cols_for_one_model(self):
-        gb = self.usecols["gb"] + self.usecols['x_categorical']
+        gb = self.usecols["gb"] + self.usecols["x_categorical"]
         x = self.usecols["x_continous"]
-        y = [self.usecols['y'][0]]
+        y = [self.usecols["y"][0]]
         return gb, x, y

@@ -9,6 +9,7 @@ import warnings
 
 import sqlparse
 from sqlparse import sql
+
 # from sqlparse.sql import Function, Identifier, IdentifierList
 # from sqlparse.sql import Identifier
 from sqlparse.tokens import DDL, DML, Keyword
@@ -64,10 +65,11 @@ class DBEstParser:
         :param query: a SQL query
         """
 
-        self.query = re.sub(' +', ' ', query).replace(" (", "(").lstrip()
+        self.query = re.sub(" +", " ", query).replace(" (", "(").lstrip()
         if "between" in self.query.lower():
             raise ValueError(
-                "BETWEEN clause is not supported, please use 0<=x<=10 instead.")
+                "BETWEEN clause is not supported, please use 0<=x<=10 instead."
+            )
         self.parsed = sqlparse.parse(self.query)[0]
 
     def if_nested_query(self):
@@ -75,7 +77,7 @@ class DBEstParser:
         if not self.parsed.is_group:
             return False
         for item in self.parsed.tokens:
-            if item.ttype is DML and item.value.lower() == 'select':
+            if item.ttype is DML and item.value.lower() == "select":
                 idx += 1
         if idx > 1:
             return True
@@ -86,8 +88,7 @@ class DBEstParser:
         if "," in values:
             splits = values.split(",")
             # print(splits)
-            y_splits = splits[1].replace(
-                "(", " ").replace(")", " ")  # .split(" ")
+            y_splits = splits[1].replace("(", " ").replace(")", " ")  # .split(" ")
             # print(y_splits)
             if "distinct" in y_splits.lower():
                 y_splits = y_splits.split()
@@ -98,15 +99,15 @@ class DBEstParser:
                 y_splits.append(None)
                 return splits[0], y_splits
         else:
-            y_splits = values.replace(
-                "(", " ").replace(")", " ")
+            y_splits = values.replace("(", " ").replace(")", " ")
             if "distinct" in y_splits.lower():
                 y_splits = y_splits.split()
                 # print(y_splits)
                 return None, [y_splits[i] for i in [0, 2, 1]]
             else:
                 y_splits = y_splits.split()
-                y_splits.append(None)
+                # y_splits.append(None)
+                y_splits[-1] = None
                 return None, y_splits
         # for item in self.parsed.tokens:
         #     print(self.parsed.tokens[2].normalized)
@@ -119,7 +120,7 @@ class DBEstParser:
 
     def if_where_exists(self):
         for item in self.parsed.tokens:
-            if 'where' in item.value.lower():
+            if "where" in item.value.lower():
                 return True
         return False
 
@@ -152,7 +153,7 @@ class DBEstParser:
                     return item.normalized
 
     def get_dml_where_categorical_equal_and_range(self):
-        """ get the equal and range selection for categorical attributes.
+        """get the equal and range selection for categorical attributes.
 
         For example,
 
@@ -175,14 +176,15 @@ class DBEstParser:
         conditions = {}
         for item in self.parsed.tokens:
             clause_lower = item.value.lower().replace("( ", "(").replace(" )", ")")
-            clause = item.value.replace("( ", "(").replace(" )", ")")
-            if 'where' in clause_lower:
-
-                # for token in item:
-                #     print(token.is_group, token.is_keyword,
-                #           token.is_whitespace, token.normalized)
-                splits = clause.replace("=", " = ").replace(
-                    "AND", "and").replace("where", "").split("and")
+            # clause = item.value.replace("( ", "(").replace(" )", ")")
+            if "where" in clause_lower:
+                # splits = (
+                #     clause.replace("=", " = ")
+                #     .replace("AND", "and")
+                #     .replace("where", "")
+                #     .split("and")
+                # )
+                splits = clause_lower.replace("=", " = ").replace("where", "").split("and")
                 # splits_lower = clause_lower.replace("=", " = ").split("and")
 
                 # print("splits", splits)
@@ -196,14 +198,24 @@ class DBEstParser:
                             condition_no_equal = condition.replace("=", "")
                             splits = condition_no_equal.split("<")
                             if "unix_timestamp" in splits[0]:
-                                left = unix_timestamp(splits[0].replace(
-                                    "unix_timestamp(", "").replace(")", "").replace("'", "").replace('"', ''))
+                                left = unix_timestamp(
+                                    splits[0]
+                                    .replace("unix_timestamp(", "")
+                                    .replace(")", "")
+                                    .replace("'", "")
+                                    .replace('"', "")
+                                )
                             else:
                                 left = float(splits[0])
 
                             if "unix_timestamp" in splits[2]:
-                                right = unix_timestamp(splits[2].replace(
-                                    "unix_timestamp(", "").replace(")", "").replace("'", "").replace('"', ''))
+                                right = unix_timestamp(
+                                    splits[2]
+                                    .replace("unix_timestamp(", "")
+                                    .replace(")", "")
+                                    .replace("'", "")
+                                    .replace('"', "")
+                                )
                             else:
                                 right = float(splits[2])
                             cond = [left, right]
@@ -224,20 +236,16 @@ class DBEstParser:
                         else:
                             if "<=" in condition:
                                 splits = condition.split("<=")
-                                conditions[splits[0]] = [
-                                    None, splits[1], False, True]
+                                conditions[splits[0]] = [None, splits[1], False, True]
                             elif ">=" in condition:
                                 splits = condition.split(">=")
-                                conditions[splits[0]] = [
-                                    splits[1], None, True, False]
+                                conditions[splits[0]] = [splits[1], None, True, False]
                             elif "<" in condition:
                                 splits = condition.split("<")
-                                conditions[splits[0]] = [
-                                    None, splits[1], False, False]
+                                conditions[splits[0]] = [None, splits[1], False, False]
                             elif ">" in condition:
                                 splits = condition.split(">")
-                                conditions[splits[0]] = [
-                                    splits[1], None, False, False]
+                                conditions[splits[0]] = [splits[1], None, False, False]
                             elif "=" in condition:
                                 splits = condition.split("=")
                                 equal_xs.append(splits[0])
@@ -245,7 +253,8 @@ class DBEstParser:
                                 # print(equal_xs, equal_values)
                             else:
                                 raise ValueError(
-                                    "unexpected condition in SQL: ", condition)
+                                    "unexpected condition in SQL: ", condition
+                                )
                 return [equal_xs, equal_values, conditions]
 
                 # # # = condition
@@ -329,19 +338,20 @@ class DBEstParser:
 
     def get_ddl_model_name(self):
         for item in self.parsed.tokens:
-            if item.ttype is None and "(" in item.value.lower():
+            if item.ttype is None:
                 return item.tokens[0].value
 
     def get_y(self):
-        item = self.parsed.tokens[4].value
+        item = self.parsed.tokens[5].value
         index_comma = item.index(",")
         item = item[:index_comma]
-        y_list = item.lower().replace(
-            "(", " ").replace(")", " ").replace(",", " ").split()
+        y_list = (
+            item.lower().replace("(", " ").replace(")", " ").replace(",", " ").split()
+        )
+
         # print("y_list", y_list)
-        if y_list[2] not in ["real", "categorical"]:
-            raise TypeError("Unsupported type for " +
-                            y_list[1] + " -> " + y_list[2])
+        if y_list[1] not in ["real", "categorical"]:
+            raise TypeError("Unsupported type for " + y_list[0] + " -> " + y_list[1])
         # if item.ttype is None and "(" in item.value.lower():
         #     y_list = item.tokens[1].value.lower().replace(
         #         "(", "").replace(")", "").replace(",", " ").split()
@@ -351,7 +361,7 @@ class DBEstParser:
         if len(y_list) == 4:
             return [y_list[1], y_list[2], y_list[3]]
         else:
-            return [y_list[1], y_list[2], None]
+            return [y_list[0], y_list[1], None]
 
         # return item.tokens[1].tokens[1].value, item.tokens[1].tokens[3].value
 
@@ -379,24 +389,26 @@ class DBEstParser:
     #     return continous, categorical
 
     def get_x(self):
-        item = self.parsed.tokens[4].value
+        item = self.parsed.tokens[5].value
         index_comma = item.index(",")
-        item = item[index_comma+1:]
-        x_list = item.lower().replace(
-            "(", "").replace(")", "").replace(",", " ").split()
+        item = item[index_comma + 1 :]
+        x_list = (
+            item.lower().replace("(", "").replace(")", "").replace(",", " ").split()
+        )
         # print(x_list)
         continous = []
         categorical = []
         for idx in range(1, len(x_list), 2):
             if x_list[idx] == "real":
-                continous.append(x_list[idx-1])
+                continous.append(x_list[idx - 1])
             if x_list[idx] == "categorical":
-                categorical.append(x_list[idx-1])
+                categorical.append(x_list[idx - 1])
 
         if len(continous) > 1:
             raise SyntaxError(
                 "Only one continous independent variable is supported at "
-                "this moment, please modify your SQL query accordingly.")
+                "this moment, please modify your SQL query accordingly."
+            )
         # print("continous,", continous)
         # print("categorical,", categorical)
         return continous, categorical
@@ -463,14 +475,16 @@ class DBEstParser:
         if item[0].ttype is Keyword and item[0].normalized == "SET":
             for comparison in item:
                 # print("comparison", comparison)
-                if isinstance(comparison, sql.Comparison) or isinstance(comparison, sql.IdentifierList):
+                if isinstance(comparison, sql.Comparison) or isinstance(
+                    comparison, sql.IdentifierList
+                ):
                     # print("SQL contain comparison.")
                     splits = comparison.value.split("=")
                     # print("splits[1]", splits[1])
                     if any(i in splits[1] for i in ["'", '"']):
                         # value is a string
                         # print("value is string")
-                        splits[1] = splits[1].replace("'", "").replace('"', '')
+                        splits[1] = splits[1].replace("'", "").replace('"', "")
                         # print("splits[1] BEFORE", splits[1])
                         if splits[1].lower() == "true":
                             splits[1] = True
@@ -486,7 +500,8 @@ class DBEstParser:
                         splits[1] = int(float(splits[1]))
                     return splits[0], splits[1]
         warnings.warn(
-            "error parsing the SQL. Possible solution is set val='True' instead of set val=True")
+            "error parsing the SQL. Possible solution is set val='True' instead of set val=True"
+        )
         return
 
         # def get_filter(self):
@@ -541,7 +556,8 @@ if __name__ == "__main__":
     # parser.parse(
     #     "select z, count ( y ) from t_m where x BETWEEN  unix_timestamp('2019-02-28T16:00:00.000Z') and unix_timestamp('2019-03-28T16:00:00.000Z') and 321<X1 < 1123 and x2 = 'HaHaHa' and x3='' and x4<5 GROUP BY z1, z2 ,x method uniform scale data   haha/num.csv  size 23")
     parser.parse(
-        "select z, var ( y ) from t_m where  unix_timestamp('2019-02-28T16:00:00.000Z')<=x <=unix_timestamp('2019-03-28T16:00:00.000Z') and 321<X1 < 1123 and x2 = 'HaHaHa' and x3='' and x4<5 GROUP BY z1, z2 ,x method uniform scale data   haha/num.csv  size 23")
+        "select z, var ( y ) from t_m where  unix_timestamp('2019-02-28T16:00:00.000Z')<=x <=unix_timestamp('2019-03-28T16:00:00.000Z') and 321<X1 < 1123 and x2 = 'HaHaHa' and x3='' and x4<5 GROUP BY z1, z2 ,x method uniform scale data   haha/num.csv  size 23"
+    )
     # print(parser.if_contain_scaling_factor())
     if parser.if_contain_groupby():
         print("yes, group by")

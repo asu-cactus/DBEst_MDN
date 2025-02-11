@@ -23,7 +23,7 @@ import numpy as np
 
 
 def approx_integrate(func: callable, x_lb: float, x_ub: float, n_division=20) -> float:
-    """ simulate the integral using user-defined functions.
+    """simulate the integral using user-defined functions.
 
     Args:
         func (callable): the integral funcion, must be able to predict for a list of points.
@@ -40,7 +40,7 @@ def approx_integrate(func: callable, x_lb: float, x_ub: float, n_division=20) ->
     # print(func(grid)[0:-1].sum()*step)
     # print(func(grid)[1:].sum()*step)
     predictions = func(grid)
-    return (0.5*(predictions[0]+predictions[-1]) + predictions[1:-1])*step
+    return (0.5 * (predictions[0] + predictions[-1]) + predictions[1:-1]) * step
     # return (func(grid)[0:-1].sum() + func(grid)[1:].sum())*0.5*step
 
 
@@ -66,7 +66,9 @@ def approx_integrate(func: callable, x_lb: float, x_ub: float, n_division=20) ->
 #     return {}
 
 
-def prepare_reg_density_data(density, x_lb: float, x_ub: float, groups: list, reg,  runtime_config):
+def prepare_reg_density_data(
+    density, x_lb: float, x_ub: float, groups: list, reg, runtime_config
+):
     # prepare_reg_density_data(density: KdeMdn, x_lb: float, x_ub: float, groups: list, reg: RegMdnGroupBy = None,  n_division: int = 20):
     n_division = runtime_config["n_division"]
     x_points, step = np.linspace(x_lb, x_ub, n_division, retstep=True)
@@ -74,10 +76,9 @@ def prepare_reg_density_data(density, x_lb: float, x_ub: float, groups: list, re
     # print("groups in prepare integral----------", groups)
     # raise
 
-    reg_x_points = list(x_points)*len(groups)
+    reg_x_points = list(x_points) * len(groups)
     try:  # group key is [g1-g2]
-        reg_g_points = [g.split(",")
-                        for g in groups for _ in range(n_division)]
+        reg_g_points = [g.split(",") for g in groups for _ in range(n_division)]
         density_g_points = [i.split(",") for i in groups]
     except AttributeError:  # group key is [g1,g2]
         reg_g_points = [list(g) for g in groups for _ in range(n_division)]
@@ -90,48 +91,54 @@ def prepare_reg_density_data(density, x_lb: float, x_ub: float, groups: list, re
     # print(density_x_points)
 
     pre_density = density.predict(
-        density_g_points, density_x_points, runtime_config, b_plot=False)
+        density_g_points, density_x_points, runtime_config, b_plot=False
+    )
+    # import pdb
 
-    pre_reg = None if reg is None else reg.predict(
-        reg_g_points, reg_x_points, runtime_config)
+    # pdb.set_trace()
+    pre_reg = (
+        None if reg is None else reg.predict(reg_g_points, reg_x_points, runtime_config)
+    )
     if pre_reg is not None:
         pre_reg = np.array(pre_reg).reshape(len(groups), n_division)
 
     return pre_density, pre_reg, step
 
+
 def prepare_var(density, groups, runtime_config):
     print("groups", groups)
 
-    return density.var(groups, runtime_config) #{"group":99999.99}
+    return density.var(groups, runtime_config)  # {"group":99999.99}
 
 
 def approx_count(pred_density, step: float):
     #  the integral only use the left point in the interval, not the central point, need improvement
     # return np.sum(pred_density[:, :-1], axis=1)*step
     result = np.sum(pred_density[:, 1:-1], axis=1)
-    result = np.add(result, pred_density[:, 0]*0.5)
-    result = np.add(result, pred_density[:, -1]*0.5)
-    return result*step
+    result = np.add(result, pred_density[:, 0] * 0.5)
+    result = np.add(result, pred_density[:, -1] * 0.5)
+    return result * step
 
 
 def approx_sum(pred_density, pre_reg, step: float):
     multi = np.multiply(pred_density, pre_reg)
     # result = np.sum(multi[:, :-1], axis=1)
     result = np.sum(multi[:, 1:-1], axis=1)
-    result = np.add(result, multi[:, 0]*0.5)
-    result = np.add(result, multi[:, -1]*0.5)
+    result = np.add(result, multi[:, 0] * 0.5)
+    result = np.add(result, multi[:, -1] * 0.5)
 
-    return result*step
+    return result * step
 
 
 def approx_avg(pred_density, pre_reg, step: float):
-    results = np.divide(approx_sum(pred_density, pre_reg,
-                                   step), approx_count(pred_density, step))
+    results = np.divide(
+        approx_sum(pred_density, pre_reg, step), approx_count(pred_density, step)
+    )
     return results
 
 
 def sin_(points: list) -> float:
-    """ sin function, for testing purposes.
+    """sin function, for testing purposes.
 
     Args:
         points (list[float]): points.
