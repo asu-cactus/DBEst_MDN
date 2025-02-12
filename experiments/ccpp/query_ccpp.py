@@ -37,11 +37,11 @@ EPS = 1e-6
 class Query1:
     def __init__(self):
         self.sql_executor = SqlExecutor()
-        self.dep = "TAXI_OUT"
-        self.indep = "DISTANCE"
+        self.dep = "PE"
+        self.indep = "RH"
         self.task_type = "count"
 
-        self.data_name = "flights"
+        self.data_name = "ccpp"
         self.mdl_name = f"{self.data_name}_mdl"
         self.datafile = f"{self.data_name}_{self.task_type}.csv"
         self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D.npz"
@@ -53,7 +53,6 @@ class Query1:
 
     def workload(
         self,
-
         n_jobs: int = 1,
         nqueries: int = 1000,   
     ):

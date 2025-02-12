@@ -107,10 +107,10 @@ Currently, there is no backend server, and DBEst handles csv files with headers.
 - download the file ``` wget -O pm25.csv https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv```
 -  copy the file to the warehouse directory **dbestwarehouse**
 - start dbestclient and create a model between pm2.5 and PRES, with sample size of 1000 by 
-```create table mdl(pm25 real, PRES real) from pm25.csv  method uniform size 1000```
+```create table mdl(pm25 real, PRES real) from pm25.csv  method uniform size 1000;```
  (Note, you need to open the file and rename the header from pm2.5 to pm25)
 - Then get result from model only!
-``` select count(pm25 real) from mdl where PRES between 1000 and 1020;```
+```select count(pm25 real) from mdl where 1000<=PRES<=1020;```
 	```
 	OK
 	578.380307583211
