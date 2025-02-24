@@ -39,7 +39,9 @@ class Query1:
         self.sql_executor = SqlExecutor()
         self.dep = "PE"
         self.indep = "RH"
-        self.task_type = "count"
+        self.task_type = "sum"
+        self.ratio = 0.1
+        # self.ratio = 1.0    
 
         self.data_name = "ccpp"
         self.mdl_name = f"{self.data_name}_mdl"
@@ -47,8 +49,13 @@ class Query1:
         self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D.npz"
 
     def build_model(self):
+        self.sql_executor.execute("set n_mdn_layer_node_reg=50")          # 20
+        self.sql_executor.execute("set n_mdn_layer_node_density=50")      # 30
+        self.sql_executor.execute("set n_hidden_layer=2")                 # 2
+        self.sql_executor.execute("set n_gaussians_reg=30")                # 
+        self.sql_executor.execute("set n_gaussians_density=30")            # 10
         self.sql_executor.execute(
-            f"create table {self.mdl_name}({self.dep} real, {self.indep} real) from {self.datafile} method uniform size 1000000"
+            f"create table {self.mdl_name}({self.dep} real, {self.indep} real) from {self.datafile} method uniform size {self.ratio}"
         )
 
     def workload(
