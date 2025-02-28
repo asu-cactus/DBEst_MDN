@@ -1,8 +1,9 @@
 .DS_Store
 .idea/
 config.json
-dbestwarehouse/
+dbestwarehouse*/
 *.pyc
+*.out
 resources/
 dbestclient.egg-info/
 build/

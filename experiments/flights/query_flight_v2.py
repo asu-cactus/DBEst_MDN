@@ -41,16 +41,16 @@ class Query1:
         self.indep = "DISTANCE"
         self.task_type = "sum"
         self.ratio = 0.1
-        # self.ratio = 1.0
 
         self.data_name = "flights"
         self.mdl_name = f"{self.data_name}_mdl"
-        self.datafile = f"{self.data_name}_{self.task_type}.csv"
+        self.datafile = f"{self.data_name}_{self.task_type}_sample.csv"
         self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D.npz"
+        # self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D_nonzeros.npz"
 
     def build_model(self):
-        self.sql_executor.execute("set n_mdn_layer_node_reg=50")          # 20
-        self.sql_executor.execute("set n_mdn_layer_node_density=50")      # 30
+        self.sql_executor.execute("set n_mdn_layer_node_reg=200")          # 20
+        self.sql_executor.execute("set n_mdn_layer_node_density=200")      # 30
         self.sql_executor.execute("set n_hidden_layer=2")                 # 2
         self.sql_executor.execute("set n_gaussians_reg=30")                # 
         self.sql_executor.execute("set n_gaussians_density=30")            # 10

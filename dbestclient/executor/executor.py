@@ -60,6 +60,8 @@ class SqlExecutor:
         self.n_total_records = None
         self.use_kde = True
 
+        self.already_save_model_size = False
+
     def init_model_catalog(self):
         # search the warehouse, and add all available models.
         n_model = 0
@@ -72,6 +74,7 @@ class SqlExecutor:
                 if n_model == 0:
                     print("start loading pre-existing models.")
  
+                device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                 with open(
                     self.config.get_config()["warehousedir"] + "/" + file_name, "rb"
                 ) as f:
@@ -81,15 +84,16 @@ class SqlExecutor:
                         self.config.get_config()["warehousedir"]
                         + "/"
                         + file_name
-                        + "_reg.pt"
+                        + "_reg.pt",
+                        map_location=device
                     )
                     model.kde.model = torch.load(
                         self.config.get_config()["warehousedir"]
                         + "/"
                         + file_name
-                        + "_kde.pt"
+                        + "_kde.pt",
+                        map_location=device
                     )
-                    print("load every thing")
                 
 
                 self.model_catalog.model_catalog[
@@ -236,6 +240,8 @@ class SqlExecutor:
                 #             "Model {0} exists in the warehouse, please use"
                 #             " another model name to train it.".format(mdl))
                 #         return
+
+
                 print("Start creating model " + mdl)
                 time1 = datetime.now()
 
@@ -259,7 +265,6 @@ class SqlExecutor:
                         split_char=self.config.get_config()["csv_split_char"],
                         num_total_records=self.n_total_records,
                     )
-
                 # set the n_total_point and scaling factor for each model.
                 # self.config.set_parameter(
                 #     "n_total_point", sampler.n_total_point)
@@ -294,6 +299,7 @@ class SqlExecutor:
                         "gb": "dummy_gb",
                     }
                     n_total_point, xys = sampler.get_groupby_frequency_data()
+
                     # if not n_total_point['if_contain_x_categorical']:
                     n_total_point.pop("if_contain_x_categorical")
                     kdeModelWrapper = KdeModelTrainer(
@@ -310,7 +316,6 @@ class SqlExecutor:
                     ).fit_from_df(
                         xys["data"], self.runtime_config, network_size="large"
                     )
-
                     qe_mdn = MdnQueryEngine(kdeModelWrapper, config=self.config.copy())
 
                     qe_mdn.serialize2warehouse(
@@ -597,6 +602,13 @@ class SqlExecutor:
                     ]
                     # print("where_conditions",where_conditions)
                     # print("filter_dbest",filter_dbest)
+                    if not self.already_save_model_size:
+                        size = sum([p.nelement() * p.element_size() for p in model.kde.model.parameters()])
+                        size += sum([p.nelement() * p.element_size() for p in model.reg.model.parameters()])
+                        with open("results/model_size.txt", "a") as f:
+                            f.write(f"{size / 1024:.2f} KB\n")
+                        self.already_save_model_size = True
+                  
 
                     predictions = model.predicts(
                         func,

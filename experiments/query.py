@@ -29,31 +29,60 @@
 # hive -e "SELECT unique_carrier, COUNT(*) FROM flights WHERE dep_delay>=1000 AND dep_delay<=1200 AND origin_state_abr='LA'  GROUP BY unique_carrier" > flights_one_model_1_x.csv
 
 from dbestclient.executor.executor import SqlExecutor
-import pdb
 import numpy as np
+import pandas as pd
+
+import pdb
+import argparse
+import os
 from time import perf_counter
 
 EPS = 1e-6
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Create a sample of a dataset")
+    parser.add_argument("--data_name", type=str, required=True, help="The name of the dataset")
+    parser.add_argument("--units", type=int, default=200, help="The number of units to sample")
+    args = parser.parse_args()
+    return args 
+
 class Query1:
-    def __init__(self):
+    def __init__(self, args):
         self.sql_executor = SqlExecutor()
-        self.dep = "pm25"
-        self.indep = "PRES"
+
         self.task_type = "sum"
         self.ratio = 0.1
-        # self.ratio = 1.0    
+        self.units = args.units
+        self.data_name = args.data_name
 
-        self.data_name = "pm25"
-        self.mdl_name = f"{self.data_name}_mdl"
-        self.datafile = f"{self.data_name}_{self.task_type}.csv"
-        self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D.npz"
+        if args.data_name == "pm25":
+            self.dep = "pm25"
+            self.indep = "PRES"
+        elif args.data_name == "ccpp":
+            self.dep = "PE"
+            self.indep = "RH"
+        elif args.data_name == "flights":
+            self.dep = "TAXI_OUT"
+            self.indep = "DISTANCE"
+        elif args.data_name == "store_sales":
+            self.dep = "wholesale_cost"
+            self.indep = "list_price"
+        else:
+            raise ValueError(f"Invalid data name: {args.data_name}")
+
+        self.mdl_name = f"{self.data_name}_{self.units}"
+        self.datafile = f"{self.data_name}_{self.task_type}_sample.csv"
+        # self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D.npz"
+        self.query_path = f"../../DeepMappingAQP/query/{self.data_name}_{self.task_type}_1D_nonzeros.npz"
 
     def build_model(self):
-        self.sql_executor.execute("set n_mdn_layer_node_reg=50")          # 20
-        self.sql_executor.execute("set n_mdn_layer_node_density=50")      # 30
+        self.sql_executor.execute(f"set n_mdn_layer_node_reg={self.units}")          # 20
+        self.sql_executor.execute(f"set n_mdn_layer_node_density={self.units}")      # 30
         self.sql_executor.execute("set n_hidden_layer=2")                 # 2
-        self.sql_executor.execute("set n_gaussians_reg=30")                # 
-        self.sql_executor.execute("set n_gaussians_density=30")            # 10
+        self.sql_executor.execute("set n_gaussians_reg=10")                # 
+        self.sql_executor.execute("set n_gaussians_density=10")            # 10
+        self.sql_executor.execute("set n_epoch=10")                       # 20
+        self.sql_executor.execute("set device='gpu'")
         self.sql_executor.execute(
             f"create table {self.mdl_name}({self.dep} real, {self.indep} real) from {self.datafile} method uniform size {self.ratio}"
         )
@@ -63,9 +92,16 @@ class Query1:
         n_jobs: int = 1,
         nqueries: int = 1000,   
     ):
+        # Load dataframe from save_path if exists
+        save_path = f"results/{self.data_name}_results.csv"
+        if os.path.exists(save_path):
+            df = pd.read_csv(save_path)
+        else:
+            df = pd.DataFrame(columns=["units", "query_percent", "avg_rel_err", "avgtime"])
+
         self.sql_executor.execute("set n_jobs=" + str(n_jobs) + '"')
         # Load queries
-        result_dict = {}
+        results = []
         
         npzfile = np.load(self.query_path)
         for query_percent in npzfile.keys():
@@ -84,17 +120,17 @@ class Query1:
 
             avg_rel_error = total_rel_error / len(queries)
             avg_time = (perf_counter() - start) / len(queries)
-            result_dict[query_percent] = {"avgtime": round(avg_time,6), "avg_rel_err": round(avg_rel_error,4)}
-        print(result_dict)
-
-
-      
-       
+            results.append({"units": self.units, "query_percent": query_percent,"avg_rel_err": round(avg_rel_error,4), "avgtime": round(avg_time,4)})
+        #Conver results to pandas dataframe and save to csv
+        
+        # Append results to dataframe
+        df = df.append(results, ignore_index=True)
+        df.to_csv(save_path, index=False)
 
 
 if __name__ == "__main__":
-
-    query1 = Query1()
+    args  = parse_args()
+    query1 = Query1(args)
 
     # query1.build_model(mdl_name="flights_1m_binary_small",encoder="binary")
     # # query1.build_model(mdl_name="flights_1m_onehot",encoder="onehot")
