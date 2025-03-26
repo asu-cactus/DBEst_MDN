@@ -243,6 +243,8 @@ class KdeModelTrainer:
             else:
                 raise ValueError("unexpected network_size passed in "+__file__)
 
+        # import pdb
+        # pdb.set_trace()
         # density.plot_density_per_group()
 
         # density = DBEstDensity(config=self.config).fit(x)

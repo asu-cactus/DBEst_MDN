@@ -488,27 +488,27 @@ class MdnQueryEngine(GenericQueryEngine):
         return results
 
     def serialize2warehouse(self, warehouse, runtime_config):
+        self.kde.model.cpu()
+        self.reg.model.cpu()
         with open(
             warehouse + "/" + self.mdl_name + runtime_config["model_suffix"], "wb"
         ) as f:
             
             dill.dump(self, f)
-            torch.save(
-                self.kde.model,
-                warehouse
-                + "/"
-                + self.mdl_name
-                + runtime_config["model_suffix"]
-                + "_kde.pt",
-            )
-            torch.save(
-                self.reg.model,
-                warehouse
-                + "/"
-                + self.mdl_name
-                + runtime_config["model_suffix"]
-                + "_reg.pt",
-            )
+        torch.save(
+            self.kde.model,
+            warehouse
+            + "/"
+            + self.mdl_name
+            + "_kde.pt",
+        )
+        torch.save(
+            self.reg.model,
+            warehouse
+            + "/"
+            + self.mdl_name
+            + "_reg.pt",
+        )
             
 
     def init_pickle_file_name(self, runtime_config):

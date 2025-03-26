@@ -83,16 +83,16 @@ class SqlExecutor:
                     model.reg.model = torch.load(
                         self.config.get_config()["warehousedir"]
                         + "/"
-                        + file_name
+                        + file_name.rstrip(".dill")
                         + "_reg.pt",
-                        map_location=device
+                        map_location=device,
                     )
                     model.kde.model = torch.load(
                         self.config.get_config()["warehousedir"]
                         + "/"
-                        + file_name
+                        + file_name.rstrip(".dill")
                         + "_kde.pt",
-                        map_location=device
+                        map_location=device,
                     )
                 
 
@@ -243,6 +243,7 @@ class SqlExecutor:
 
 
                 print("Start creating model " + mdl)
+                
                 time1 = datetime.now()
 
                 if self.save_sample:
