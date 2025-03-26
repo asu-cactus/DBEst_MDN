@@ -16,6 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Create a sample of a dataset")
     parser.add_argument("--data_name", type=str, required=True, help="The name of the dataset")
     parser.add_argument("--units", type=int, default=200, help="The number of units to sample")
+    parser.add_argument("--use_existing_model", action="store_true", help="Use existing model")
     parser.add_argument("--run_inserts", action="store_true", help="Run insert workload")
     parser.add_argument(
         "--retrain_every_n_insert",
@@ -197,12 +198,15 @@ class Query1:
             
 if __name__ == "__main__":
     args  = parse_args()
+    if args.use_existing_model:
+            execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}/{args.data_name}_{args.units}* ../dbestwarehouse/")
     query1 = Query1(args)
 
     if args.run_inserts:
         query1.insert_workload()
     else:
-        execute_shell_command(f"cp ../dbestwarehouse_temp/{query1.data_name}_{query1.task_type}_sample.csv ../dbestwarehouse/{query1.datafile}")
-        query1.build_model()
+        execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}_{args.task_type}_sample.csv ../dbestwarehouse/{query1.datafile}")
+        if not args.use_existing_model:
+            query1.build_model()
         query1.workload()
         execute_shell_command(f"rm ../dbestwarehouse/{query1.datafile}")
