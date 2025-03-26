@@ -60,8 +60,6 @@ class SqlExecutor:
         self.n_total_records = None
         self.use_kde = True
 
-        self.already_save_model_size = False
-
     def init_model_catalog(self):
         # search the warehouse, and add all available models.
         n_model = 0
@@ -591,6 +589,7 @@ class SqlExecutor:
                     model = self.model_catalog.model_catalog[
                         mdl + self.runtime_config["model_suffix"]
                     ]
+           
                     x_header_density = model.density_column
 
                     # print("where_conditions", where_conditions)
@@ -603,12 +602,6 @@ class SqlExecutor:
                     ]
                     # print("where_conditions",where_conditions)
                     # print("filter_dbest",filter_dbest)
-                    if not self.already_save_model_size:
-                        size = sum([p.nelement() * p.element_size() for p in model.kde.model.parameters()])
-                        size += sum([p.nelement() * p.element_size() for p in model.reg.model.parameters()])
-                        with open("results/model_size.txt", "a") as f:
-                            f.write(f"{size / 1024:.2f} KB\n")
-                        self.already_save_model_size = True
                   
 
                     predictions = model.predicts(
