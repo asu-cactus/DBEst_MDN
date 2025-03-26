@@ -205,7 +205,7 @@ if __name__ == "__main__":
     if args.run_inserts:
         query1.insert_workload()
     else:
-        execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}_{args.task_type}_sample.csv ../dbestwarehouse/{query1.datafile}")
+        execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}_{query1.task_type}_sample.csv ../dbestwarehouse/{query1.datafile}")
         if not args.use_existing_model:
             query1.build_model()
         query1.workload()
