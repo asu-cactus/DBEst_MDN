@@ -146,7 +146,8 @@ class Query1:
 
             move_model_files(self.data_name)
         # Append results to dataframe
-        df = df.append(results, ignore_index=True)
+        # df = df.append(results, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame(results)], ignore_index=True)
         df.to_csv(save_path, index=False)
 
 

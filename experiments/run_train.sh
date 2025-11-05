@@ -32,15 +32,15 @@
 # python3 query.py --data_name store_sales --units 970 # 7661.78 KB
 
 
-# python3 query.py --data_name part --units 840 # 5781.86 KB
-# python3 query.py --data_name part --units 860 # 6053.89 KB
-# python3 query.py --data_name part --units 880 # 6332.17 KB
-# python3 query.py --data_name part --units 900 # 6616.7 KB
-# python3 query.py --data_name part --units 920 # 6907.48 KB
-# python3 query.py --data_name part --units 950 # 7355.37 KB
-# python3 query.py --data_name part --units 960 # 7507.79 KB
-# python3 query.py --data_name part --units 980 # 7817.32 KB
-# python3 query.py --data_name part --units 990 # 7974.43 KB
+python3 query.py --data_name part --units 840 # 5781.86 KB
+python3 query.py --data_name part --units 860 # 6053.89 KB
+python3 query.py --data_name part --units 880 # 6332.17 KB
+python3 query.py --data_name part --units 900 # 6616.7 KB
+python3 query.py --data_name part --units 920 # 6907.48 KB
+python3 query.py --data_name part --units 950 # 7355.37 KB
+python3 query.py --data_name part --units 960 # 7507.79 KB
+python3 query.py --data_name part --units 980 # 7817.32 KB
+python3 query.py --data_name part --units 990 # 7974.43 KB
 
 
 python3 query.py --data_name lineitem --units 580 # 2814.2 KB
