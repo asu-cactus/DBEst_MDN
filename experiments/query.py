@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument("--units", type=int, default=200, help="The number of units to sample")
     parser.add_argument("--use_existing_model", action="store_true", help="Use existing model")
     parser.add_argument("--run_inserts", action="store_true", help="Run insert workload")
+    parser.add_argument("--nqueries", type=int, default=5000, help="Number of queries to run")
     parser.add_argument(
         "--retrain_every_n_insert",
         type=int,
@@ -60,6 +61,7 @@ class Query1:
  
         self.units = args.units
         self.data_name = args.data_name
+        self.nqueries = args.nqueries   
 
         if args.data_name == "pm25":
             self.dep = "pm25"
@@ -73,6 +75,12 @@ class Query1:
         elif args.data_name == "store_sales":
             self.dep = "wholesale_cost"
             self.indep = "list_price"
+        elif args.data_name == "part":
+            self.dep = "retailprice"
+            self.indep = "partkey"
+        elif args.data_name == "lineitem":
+            self.dep = "extendedprice"
+            self.indep = "quantity"
         else:
             raise ValueError(f"Invalid data name: {args.data_name}")
 
@@ -104,7 +112,6 @@ class Query1:
     def workload(
         self,
         n_jobs: int = 1,
-        nqueries: int = 1000,   
     ):
         
         self.sql_executor.execute("set n_jobs=" + str(n_jobs) + '"')
@@ -120,7 +127,7 @@ class Query1:
         
         npzfile = np.load(self.query_path)
         for query_percent in npzfile.keys():
-            queries = npzfile[query_percent][:nqueries]
+            queries = npzfile[query_percent][:self.nqueries]
             start = perf_counter()
             total_rel_error = 0.0
   
@@ -199,7 +206,7 @@ class Query1:
 if __name__ == "__main__":
     args  = parse_args()
     if args.use_existing_model:
-            execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}/{args.data_name}_{args.units}* ../dbestwarehouse/")
+        execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}/{args.data_name}_{args.units}* ../dbestwarehouse/")
     query1 = Query1(args)
 
     if args.run_inserts:
@@ -208,5 +215,5 @@ if __name__ == "__main__":
         execute_shell_command(f"cp ../dbestwarehouse_temp/{args.data_name}_{query1.task_type}_sample.csv ../dbestwarehouse/{query1.datafile}")
         if not args.use_existing_model:
             query1.build_model()
-        query1.workload()
+        query1.workload()    
         execute_shell_command(f"rm ../dbestwarehouse/{query1.datafile}")
